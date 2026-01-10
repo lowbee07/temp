@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# usage
+# bash <(curl -fsSL https://raw.githubusercontent.com/lowbee07/temp/main/sing-box-reality.sh)
+
 RED="\033[31m"
 GREEN="\033[32m"
 YELLOW="\033[33m"
@@ -53,10 +56,16 @@ install_base(){
     if [[ ! $SYSTEM == "CentOS" ]]; then
         ${PACKAGE_UPDATE[int]}
     fi
-    ${PACKAGE_INSTALL[int]} curl wget sudo tar openssl
+    ${PACKAGE_INSTALL[int]} curl wget sudo tar openssl qrencode
 }
 
 install_singbox(){
+    
+    if [[ -f "/etc/systemd/system/sing-box.service" ]]; then
+        green "Sing-box 已存在"
+        exit 1
+    fi
+
     install_base
 
     last_version=$(curl -s https://data.jsdelivr.com/v1/package/gh/SagerNet/sing-box | sed -n 4p | tr -d ',"' | awk '{print $1}')
@@ -83,18 +92,21 @@ install_singbox(){
     fi
 
     # 询问用户有关 Reality 端口、UUID 和回落域名
-    read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
-    [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
+    # read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
+    # [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
+    port=443
     until [[ -z $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
         if [[ -n $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            echo -e "${RED} $port ${PLAIN} 端口已经被其他程序占用，请更换端口重试！"
-            read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
-            [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
+            # echo -e "${RED} $port ${PLAIN} 端口已经被其他程序占用，请更换端口重试！"
+            # read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
+            # [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
+            port=$(shuf -i 2000-65535 -n 1)
         fi
     done
-    read -rp "请输入 UUID [可留空待脚本生成]: " UUID
-    [[ -z $UUID ]] && UUID=$(sing-box generate uuid)
-    read -rp "请输入配置回落的域名 [默认世嘉官网]: " dest_server
+    # read -rp "请输入 UUID [可留空待脚本生成]: " UUID
+    #[[ -z $UUID ]] && UUID=$(sing-box generate uuid)
+    UUID=$(sing-box generate uuid)
+    read -rp "请输入目标域名 [默认世嘉官网]: " dest_server
     [[ -z $dest_server ]] && dest_server="www.sega.com"
 
     # Reality short-id
@@ -110,7 +122,7 @@ install_singbox(){
     cat << EOF > /etc/sing-box/config.json
 {
     "log": {
-        "level": "trace",
+        "level": "info",
         "timestamp": true
     },
     "inbounds": [
@@ -153,20 +165,7 @@ install_singbox(){
             "type": "block",
             "tag": "block"
         }
-    ],
-    "route": {
-        "rules": [
-            {
-                "geoip": "cn",
-                "outbound": "block"
-            },
-            {
-                "geosite": "category-ads-all",
-                "outbound": "block"
-            }
-        ],
-        "final": "direct"
-    }
+    ]
 }
 EOF
 
@@ -189,53 +188,9 @@ EOF
     mkdir /root/sing-box >/dev/null 2>&1
 
     # 生成 vless 分享链接及 Clash Meta 配置文件
-    share_link="vless://$UUID@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#Misaka-Reality"
+    share_link="vless://$UUID@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#vless-Reality"
     echo ${share_link} > /root/sing-box/share-link.txt
-    cat << EOF > /root/sing-box/clash-meta.yaml
-mixed-port: 7890
-external-controller: 127.0.0.1:9090
-allow-lan: false
-mode: rule
-log-level: debug
-ipv6: true
-
-dns:
-  enable: true
-  listen: 0.0.0.0:53
-  enhanced-mode: fake-ip
-  nameserver:
-    - 8.8.8.8
-    - 1.1.1.1
-    - 114.114.114.114
-
-proxies:
-  - name: Misaka-Reality
-    type: vless
-    server: $IP
-    port: $port
-    uuid: $UUID
-    network: tcp
-    tls: true
-    udp: true
-    xudp: true
-    flow: xtls-rprx-vision
-    servername: $dest_server
-    reality-opts:
-      public-key: "$public_key"
-      short-id: "$short_id"
-    client-fingerprint: chrome
-
-proxy-groups:
-  - name: Proxy
-    type: select
-    proxies:
-      - Misaka-Reality
-      
-rules:
-  - GEOIP,CN,DIRECT
-  - MATCH,Proxy
-EOF
-
+    
     systemctl start sing-box >/dev/null 2>&1
     systemctl enable sing-box >/dev/null 2>&1
 
@@ -246,8 +201,10 @@ EOF
     fi
 
     yellow "下面是 Sing-box Reality 的分享链接，并已保存至 /root/sing-box/share-link.txt"
+    echo ""
     red $share_link
-    yellow "Clash Meta 配置文件已保存至 /root/sing-box/clash-meta.yaml"
+    echo ""
+    # yellow "Clash Meta 配置文件已保存至 /root/sing-box/clash-meta.yaml"
 }
 
 uninstall_singbox(){
@@ -271,13 +228,15 @@ stop_singbox(){
 changeport(){
     old_port=$(cat /etc/sing-box/config.json | grep listen_port | awk -F ": " '{print $2}' | sed "s/,//g")
 
-    read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
-    [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
+    # read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
+    # [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
+    port=$(shuf -i 2000-65535 -n 1)
     until [[ -z $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
         if [[ -n $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            echo -e "${RED} $port ${PLAIN} 端口已经被其他程序占用，请更换端口重试！"
-            read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
-            [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
+            # echo -e "${RED} $port ${PLAIN} 端口已经被其他程序占用，请更换端口重试！"
+            # read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
+            # [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
+            port=$(shuf -i 2000-65535 -n 1)
         fi
     done
 
@@ -291,8 +250,9 @@ changeport(){
 changeuuid(){
     old_uuid=$(cat /etc/sing-box/config.json | grep uuid | awk -F ": " '{print $2}' | sed "s/\"//g" | sed "s/,//g")
 
-    read -rp "请输入 UUID [可留空待脚本生成]: " UUID
-    [[ -z $UUID ]] && UUID=$(sing-box generate uuid)
+    # read -rp "请输入 UUID [可留空待脚本生成]: " UUID
+    # [[ -z $UUID ]] && UUID=$(sing-box generate uuid)
+    UUID=$(sing-box generate uuid)
 
     sed -i "s/$old_uuid/$UUID/g" /etc/sing-box/config.json
     sed -i "s/$old_uuid/$UUID/g" /root/sing-box/share-link.txt
@@ -304,7 +264,7 @@ changeuuid(){
 changedest(){
     old_dest=$(cat /etc/sing-box/config.json | grep server | sed -n 1p | awk -F ": " '{print $2}' | sed "s/\"//g" | sed "s/,//g")
 
-    read -rp "请输入配置回落的域名 [默认微软官网]: " dest_server
+    read -rp "请输入目标域名 [默认微软官网]: " dest_server
     [[ -z $dest_server ]] && dest_server="www.sega.com"
 
     sed -i "s/$old_dest/$dest_server/g" /etc/sing-box/config.json
@@ -329,27 +289,42 @@ change_conf(){
     esac
 }
 
+show_share_link(){
+    clear
+    echo ""
+    echo ""
+    echo "Here is the link for v2rayN and v2rayNG :"
+    echo ""
+    echo ""
+    cat /root/sing-box/share-link.txt 
+    echo ""
+    echo ""
+    cat /root/sing-box/share-link.txt | qrencode -s 120 -t ANSIUTF8 
+}
+
 menu(){
     clear
     echo "#############################################################"
     echo -e "#               ${RED}Sing-box Reality 一键安装脚本${PLAIN}               #"
     echo -e "# ${GREEN}作者${PLAIN}: MisakaNo の 小破站                                  #"
-    echo -e "# ${GREEN}博客${PLAIN}: https://blog.misaka.rest                            #"
-    echo -e "# ${GREEN}GitHub 项目${PLAIN}: https://github.com/Misaka-blog               #"
-    echo -e "# ${GREEN}GitLab 项目${PLAIN}: https://gitlab.com/Misaka-blog               #"
-    echo -e "# ${GREEN}Telegram 频道${PLAIN}: https://t.me/misakanocchannel              #"
-    echo -e "# ${GREEN}Telegram 群组${PLAIN}: https://t.me/misakanoc                     #"
-    echo -e "# ${GREEN}YouTube 频道${PLAIN}: https://www.youtube.com/@misaka-blog        #"
+    # echo -e "# ${GREEN}博客${PLAIN}: https://blog.misaka.rest                            #"
+    # echo -e "# ${GREEN}GitHub 项目${PLAIN}: https://github.com/Misaka-blog               #"
+    # echo -e "# ${GREEN}GitLab 项目${PLAIN}: https://gitlab.com/Misaka-blog               #"
+    # echo -e "# ${GREEN}Telegram 频道${PLAIN}: https://t.me/misakanocchannel              #"
+    # echo -e "# ${GREEN}Telegram 群组${PLAIN}: https://t.me/misakanoc                     #"
+    # echo -e "# ${GREEN}YouTube 频道${PLAIN}: https://www.youtube.com/@misaka-blog        #"
     echo "#############################################################"
     echo ""
-    echo -e " ${GREEN}1.${PLAIN} 安装 Sing-box Reality"
-    echo -e " ${GREEN}2.${PLAIN} 卸载 Sing-box Reality"
+    echo -e " ${GREEN}1.${PLAIN} 安装 Sing-box"
+    echo -e " ${GREEN}2.${PLAIN} 卸载 Sing-box"
     echo " -------------"
-    echo -e " ${GREEN}3.${PLAIN} 启动 Sing-box Reality"
-    echo -e " ${GREEN}4.${PLAIN} 停止 Sing-box Reality"
-    echo -e " ${GREEN}5.${PLAIN} 重载 Sing-box Reality"
+    echo -e " ${GREEN}3.${PLAIN} 启动 Sing-box"
+    echo -e " ${GREEN}4.${PLAIN} 停止 Sing-box"
+    echo -e " ${GREEN}5.${PLAIN} 重载 Sing-box"
     echo " -------------"
-    echo -e " ${GREEN}6.${PLAIN} 修改 Sing-box Reality 配置"
+    echo -e " ${GREEN}6.${PLAIN} 修改 配置"
+    echo " -------------"
+    echo -e " ${GREEN}7.${PLAIN} show share link"
     echo " -------------"
     echo -e " ${GREEN}0.${PLAIN} 退出"
     echo ""
@@ -361,6 +336,7 @@ menu(){
         4) stop_singbox ;;
         5) stop_singbox && start_singbox ;;
         6) change_conf ;;
+        7) show_share_link ;;
         *) red "请输入正确的选项 [0-6]！" && exit 1 ;;
     esac
 }
