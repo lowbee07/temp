@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# usage
-# bash <(curl -fsSL https://raw.githubusercontent.com/lowbee07/temp/main/sing-box-reality.sh)
-
 RED="\033[31m"
 GREEN="\033[32m"
 YELLOW="\033[33m"
