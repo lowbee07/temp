@@ -87,23 +87,15 @@ install_singbox(){
         red "Sing-box 安装失败！"
         exit 1
     fi
+}
 
-    # 询问用户有关 Reality 端口、UUID 和回落域名
-    # read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
-    # [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
-    port=443
-    until [[ -z $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
-        if [[ -n $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            # echo -e "${RED} $port ${PLAIN} 端口已经被其他程序占用，请更换端口重试！"
-            # read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
-            # [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
-            port=$(shuf -i 2000-65535 -n 1)
-        fi
-    done
-    # read -rp "请输入 UUID [可留空待脚本生成]: " UUID
-    #[[ -z $UUID ]] && UUID=$(sing-box generate uuid)
+makeConfig()
+{
+    stop_singbox
+
+    port=$(shuf -i 20000-60000 -n 1)
     UUID=$(sing-box generate uuid)
-    read -rp "请输入目标域名 [默认世嘉官网]: " dest_server
+    read -rp "请输入 Reality 目标域名 [默认世嘉官网]: " dest_server
     [[ -z $dest_server ]] && dest_server="www.sega.com"
 
     # Reality short-id
@@ -114,7 +106,16 @@ install_singbox(){
     private_key=$(echo $keys | awk -F " " '{print $2}')
     public_key=$(echo $keys | awk -F " " '{print $4}')
 
-    # 将默认的配置文件删除，并写入 Reality 配置
+    # tuic v5
+    port2=$(shuf -i 20000-60000 -n 1)
+    tuic_pwd==$(openssl rand -hex 8)
+
+    # 自签证书 www.bing.com www.tesla.com
+    sni='www.bing.com'
+    openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
+    openssl req -new -x509 -days 36500 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
+
+    # 将默认的配置文件删除，并写入
     rm -f /etc/sing-box/config.json
     cat << EOF > /etc/sing-box/config.json
 {
@@ -151,6 +152,27 @@ install_singbox(){
                     ]
                 }
             }
+        },
+        {
+            "type": "tuic",
+            "tag": "tuic-in",
+            "listen": "::",
+            "listen_port": $port2,
+            "users": [
+                {
+                    "uuid": "$UUID",
+                    "password": "$tuic_pwd"
+                }
+            ],
+            "congestion_control": "bbr",
+            "tls": {
+                "enabled": true,
+                "alpn": [
+                    "h3"
+                ],
+                "certificate_path": "/etc/sing-box/cert.crt",
+                "key_path": "/etc/sing-box/private.key"
+            }
         }
     ],
     "outbounds": [
@@ -166,42 +188,34 @@ install_singbox(){
 }
 EOF
 
-    warp_v4=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-    warp_v6=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-    if [[ $warp_v4 =~ on|plus ]] || [[ $warp_v6 =~ on|plus ]]; then
-        systemctl stop warp-go >/dev/null 2>&1
-        systemctl disable warp-go >/dev/null 2>&1
-        wg-quick down wgcf >/dev/null 2>&1
-        systemctl disable wg-quick@wgcf >/dev/null 2>&1
-        IP=$(expr "$(curl -ks4m8 -A Mozilla https://api.ip.sb/geoip)" : '.*ip\":[ ]*\"\([^"]*\).*') || IP=$(expr "$(curl -ks6m8 -A Mozilla https://api.ip.sb/geoip)" : '.*ip\":[ ]*\"\([^"]*\).*')
-        systemctl start warp-go >/dev/null 2>&1
-        systemctl enable warp-go >/dev/null 2>&1
-        wg-quick start wgcf >/dev/null 2>&1
-        systemctl enable wg-quick@wgcf >/dev/null 2>&1
-    else
-        IP=$(expr "$(curl -ks4m8 -A Mozilla https://api.ip.sb/geoip)" : '.*ip\":[ ]*\"\([^"]*\).*') || IP=$(expr "$(curl -ks6m8 -A Mozilla https://api.ip.sb/geoip)" : '.*ip\":[ ]*\"\([^"]*\).*')
-    fi
+    IP=$(expr "$(curl -ks4m8 -A Mozilla https://api.ip.sb/geoip)" : '.*ip\":[ ]*\"\([^"]*\).*') || IP=$(expr "$(curl -ks6m8 -A Mozilla https://api.ip.sb/geoip)" : '.*ip\":[ ]*\"\([^"]*\).*')
+    country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
 
     mkdir /root/sing-box >/dev/null 2>&1
 
     # 生成 vless 分享链接及 Clash Meta 配置文件
-    share_link="vless://$UUID@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#vless-Reality"
-    echo ${share_link} > /root/sing-box/share-link.txt
+    vless_link="vless://$UUID@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#${country}-vless-Reality"
+    echo ${vless_link} > /root/sing-box/vless-link.txt
     
-    systemctl start sing-box >/dev/null 2>&1
-    systemctl enable sing-box >/dev/null 2>&1
+    tuic_link="tuic://${UUID}:${tuic_pwd}@${IP}:${port2}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"
+    echo $tuic_link > /root/sing-box/tuic-link.txt
 
-    if [[ -n $(systemctl status sing-box 2>/dev/null | grep -w active) && -f '/etc/sing-box/config.json' ]]; then
-        green "Sing-box 服务启动成功"
-    else
-        red "Sing-box 服务启动失败，请运行 systemctl status sing-box 查看服务状态并反馈，脚本退出" && exit 1
-    fi
+    start_singbox
+}
 
-    yellow "下面是 Sing-box Reality 的分享链接，并已保存至 /root/sing-box/share-link.txt"
+showShareLink(){
     echo ""
-    red $share_link
     echo ""
-    # yellow "Clash Meta 配置文件已保存至 /root/sing-box/clash-meta.yaml"
+    echo "Here is the link for v2rayN and v2rayNG :"
+    echo ""
+    yellow $(cat /root/sing-box/vless-link.txt)
+    echo ""
+    cat /root/sing-box/vless-link.txt | qrencode -s 120 -t ANSIUTF8 
+    echo ""
+    yellow $(cat /root/sing-box/tuic-link.txt) 
+    echo ""
+    cat /root/sing-box/tuic-link.txt | qrencode -s 120 -t ANSIUTF8 
+    echo ""
 }
 
 uninstall_singbox(){
@@ -215,88 +229,17 @@ uninstall_singbox(){
 start_singbox(){
     systemctl start sing-box
     systemctl enable sing-box >/dev/null 2>&1
+    
+    if [[ -n $(systemctl status sing-box 2>/dev/null | grep -w active) && -f '/etc/sing-box/config.json' ]]; then
+        green "Sing-box 服务启动成功"
+    else
+        red "Sing-box 服务启动失败，请运行 systemctl status sing-box 查看服务状态并反馈，脚本退出" && exit 1
+    fi
 }
 
 stop_singbox(){
     systemctl stop sing-box
     systemctl disable sing-box >/dev/null 2>&1
-}
-
-changeport(){
-    old_port=$(cat /etc/sing-box/config.json | grep listen_port | awk -F ": " '{print $2}' | sed "s/,//g")
-
-    # read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
-    # [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
-    port=$(shuf -i 2000-65535 -n 1)
-    until [[ -z $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
-        if [[ -n $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            # echo -e "${RED} $port ${PLAIN} 端口已经被其他程序占用，请更换端口重试！"
-            # read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
-            # [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
-            port=$(shuf -i 2000-65535 -n 1)
-        fi
-    done
-
-    sed -i "s/$old_port/$port/g" /etc/sing-box/config.json
-    sed -i "s/$old_port/$port/g" /root/sing-box/share-link.txt
-    stop_singbox && start_singbox
-
-    green "Sing-box 端口已修改成功！"
-}
-
-changeuuid(){
-    old_uuid=$(cat /etc/sing-box/config.json | grep uuid | awk -F ": " '{print $2}' | sed "s/\"//g" | sed "s/,//g")
-
-    # read -rp "请输入 UUID [可留空待脚本生成]: " UUID
-    # [[ -z $UUID ]] && UUID=$(sing-box generate uuid)
-    UUID=$(sing-box generate uuid)
-
-    sed -i "s/$old_uuid/$UUID/g" /etc/sing-box/config.json
-    sed -i "s/$old_uuid/$UUID/g" /root/sing-box/share-link.txt
-    stop_singbox && start_singbox
-
-    green "Sing-box UUID 已修改成功！"
-}
-
-changedest(){
-    old_dest=$(cat /etc/sing-box/config.json | grep server | sed -n 1p | awk -F ": " '{print $2}' | sed "s/\"//g" | sed "s/,//g")
-
-    read -rp "请输入目标域名 [默认微软官网]: " dest_server
-    [[ -z $dest_server ]] && dest_server="www.sega.com"
-
-    sed -i "s/$old_dest/$dest_server/g" /etc/sing-box/config.json
-    sed -i "s/$old_dest/$dest_server/g" /root/sing-box/share-link.txt
-    stop_singbox && start_singbox
-
-    green "Sing-box 回落域名已修改成功！"
-}
-
-change_conf(){
-    green "Sing-box 配置变更选择如下:"
-    echo -e " ${GREEN}1.${PLAIN} 修改端口"
-    echo -e " ${GREEN}2.${PLAIN} 修改UUID"
-    echo -e " ${GREEN}3.${PLAIN} 修改回落域名"
-    echo ""
-    read -p " 请选择操作 [1-3]: " confAnswer
-    case $confAnswer in
-        1 ) changeport ;;
-        2 ) changeuuid ;;
-        3 ) changedest ;;
-        * ) exit 1 ;;
-    esac
-}
-
-show_share_link(){
-    clear
-    echo ""
-    echo ""
-    echo "Here is the link for v2rayN and v2rayNG :"
-    echo ""
-    echo ""
-    cat /root/sing-box/share-link.txt 
-    echo ""
-    echo ""
-    cat /root/sing-box/share-link.txt | qrencode -s 120 -t ANSIUTF8 
 }
 
 menu(){
@@ -318,8 +261,8 @@ menu(){
     echo -e " ${GREEN}3.${PLAIN} 启动 Sing-box"
     echo -e " ${GREEN}4.${PLAIN} 停止 Sing-box"
     echo -e " ${GREEN}5.${PLAIN} 重载 Sing-box"
-    echo " -------------"
-    echo -e " ${GREEN}6.${PLAIN} 修改 配置"
+    # echo " -------------"
+    # echo -e " ${GREEN}6.${PLAIN} 全新的配置"
     echo " -------------"
     echo -e " ${GREEN}7.${PLAIN} show share link"
     echo " -------------"
@@ -327,13 +270,17 @@ menu(){
     echo ""
     read -rp " 请输入选项 [0-6] ：" answer
     case $answer in
-        1) install_singbox ;;
+        1) 
+            install_singbox 
+            makeConfig
+            showShareLink
+            ;;
         2) uninstall_singbox ;;
         3) start_singbox ;;
         4) stop_singbox ;;
         5) stop_singbox && start_singbox ;;
-        6) change_conf ;;
-        7) show_share_link ;;
+        # 6) makeConfig ;;
+        7) showShareLink ;;
         *) red "请输入正确的选项 [0-6]！" && exit 1 ;;
     esac
 }
