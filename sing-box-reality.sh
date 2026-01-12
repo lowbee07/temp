@@ -114,6 +114,8 @@ makeConfig()
     sni='www.bing.com'
     openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
     openssl req -new -x509 -days 36500 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
+    chmod 777 /etc/sing-box/private.key
+    chmod 777 /etc/sing-box/cert.crt
 
     # 将默认的配置文件删除，并写入
     rm -f /etc/sing-box/config.json

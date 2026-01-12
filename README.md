@@ -1,1 +1,1 @@
-hello world
+再看一眼就会爆炸

@@ -9,14 +9,14 @@ bash <(curl -fsSL https://get.hy2.sh/)
 sni='www.bing.com'
 openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
 openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=${sni}"
+chmod 777 /etc/hysteria/cert.crt
+chmod 777 /etc/hysteria/private.key
 
 hy2_link="hysteria2://${uuid}@${serverIp}:${port2}?sni=${sni}&insecure=1#${country}-hy2"
 echo ""
 echo ${hy2_link}
 # echo ${hy2_link} > hy2.txt
 
-chmod +rw /etc/hysteria/cert.crt
-chmod +rw /etc/hysteria/private.key
 
 cat > /etc/hysteria/config.yaml << EOF
 listen: :$port2
