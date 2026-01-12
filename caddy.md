@@ -11,6 +11,8 @@ mv caddy-forwardproxy-naive/caddy /usr/bin/
 # rm -rf caddy-forwardproxy-naive
 # rm caddy.tar.xz
 
+uuid=$(cat /proc/sys/kernel/random/uuid)
+
 mkdir /etc/caddy
 cat > /etc/caddy/Caddyfile << EOF
 {
@@ -19,7 +21,7 @@ cat > /etc/caddy/Caddyfile << EOF
 :443, example.com {
   tls me@example.com
   forward_proxy {
-    basic_auth user pass
+    basic_auth $uuid password
     hide_ip
     hide_via
     probe_resistance
