@@ -1,4 +1,6 @@
-### [Run-Caddy-as-a-daemon](https://github.com/klzgrad/naiveproxy/wiki/Run-Caddy-as-a-daemon)
+### caddy
+
+[Run-Caddy-as-a-daemon](https://github.com/klzgrad/naiveproxy/wiki/Run-Caddy-as-a-daemon)
 
 ```bash
 # download
