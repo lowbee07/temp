@@ -109,7 +109,7 @@ makeConfig()
 
     # tuic v5
     port2=$(shuf -i 20000-60000 -n 1)
-    tuic_pwd==$(openssl rand -hex 8)
+    tuic_pwd=$(openssl rand -hex 8)
 
     # 自签证书 www.bing.com www.tesla.com
     sni='www.bing.com'
