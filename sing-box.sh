@@ -93,6 +93,7 @@ makeConfig()
 {
     stop_singbox
 
+    # vless-vision-reality
     port=$(shuf -i 20000-60000 -n 1)
     UUID=$(sing-box generate uuid)
     read -rp "请输入 Reality 目标域名 [默认世嘉官网]: " dest_server
@@ -190,17 +191,17 @@ makeConfig()
 }
 EOF
 
-    IP=$(expr "$(curl -ks4m8 -A Mozilla https://api.ip.sb/geoip)" : '.*ip\":[ ]*\"\([^"]*\).*') || IP=$(expr "$(curl -ks6m8 -A Mozilla https://api.ip.sb/geoip)" : '.*ip\":[ ]*\"\([^"]*\).*')
+    IP=$(curl -s ipv4.wtfismyip.com/text)
     country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
 
     mkdir /root/sing-box >/dev/null 2>&1
 
     # 生成 vless 分享链接及 Clash Meta 配置文件
     vless_link="vless://$UUID@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#${country}-vless-Reality"
-    echo ${vless_link} > /root/sing-box/vless-link.txt
+    echo ${vless_link} > /root/sing-box/vless-vision-reality.txt
     
     tuic_link="tuic://${UUID}:${tuic_pwd}@${IP}:${port2}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"
-    echo $tuic_link > /root/sing-box/tuic-link.txt
+    echo $tuic_link > /root/sing-box/tuic-v5.txt
 
     start_singbox
 }
@@ -210,13 +211,13 @@ showShareLink(){
     echo ""
     echo "Here is the link for v2rayN and v2rayNG :"
     echo ""
-    yellow $(cat /root/sing-box/vless-link.txt)
+    yellow $(cat /root/sing-box/vless-vision-reality.txt)
     echo ""
-    cat /root/sing-box/vless-link.txt | qrencode -s 120 -t ANSIUTF8 
+    cat /root/sing-box/vless-vision-reality.txt | qrencode -t ANSIUTF8 
     echo ""
-    yellow $(cat /root/sing-box/tuic-link.txt) 
+    yellow $(cat /root/sing-box/tuic-v5.txt) 
     echo ""
-    cat /root/sing-box/tuic-link.txt | qrencode -s 120 -t ANSIUTF8 
+    cat /root/sing-box/tuic-v5.txt | qrencode -t ANSIUTF8 
     echo ""
 }
 
