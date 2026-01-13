@@ -10,6 +10,10 @@ chmod +x /usr/bin/caddy
 
 # 伪装网站
 mkdir -p /var/www/html
+wget https://github.com/HFIProgramming/mikutap/archive/refs/tags/2.0.0.tar.gz
+tar -xzf mikutap-2.0.0.tar.gz
+# rm -rf /var/www/html
+# mv mikutap-2.0.0 /var/www/html
 
 uuid=$(cat /proc/sys/kernel/random/uuid)
 domain='你的域名'
