@@ -114,7 +114,7 @@ systemctl status xray
 # systemctl disable xray
 
 # 实时日志
-journalctl -u xray -o cat -f
+# journalctl -u xray -o cat -f
 ```
 
 Shadowsocks
