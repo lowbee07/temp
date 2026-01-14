@@ -48,10 +48,10 @@ mkdir /root/sing-box >/dev/null 2>&1
 
 # 生成 vless 分享链接
 vless_link="vless://$UUID@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#${country}-vless-Reality"
-echo ${vless_link} > /root/sing-box/vless-vision-reality.txt
+echo ${vless_link} > /root/vless-vision-reality.txt
 
 tuic_link="tuic://${UUID}:${tuic_pwd}@${IP}:${port2}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"
-echo $tuic_link > /root/sing-box/tuic-v5.txt
+echo $tuic_link > /root/tuic-v5.txt
 echo ""
 
 # 将默认的配置文件删除，并写入
@@ -132,13 +132,13 @@ EOF
 ```bash
 echo "Here is the link for v2rayN and v2rayNG :"
 echo ""
-cat /root/sing-box/vless-vision-reality.txt
+cat /root/vless-vision-reality.txt
 echo ""
-cat /root/sing-box/vless-vision-reality.txt | qrencode -t ANSIUTF8 
+cat /root/vless-vision-reality.txt | qrencode -t ANSIUTF8 
 echo ""
-cat /root/sing-box/tuic-v5.txt
+cat /root/tuic-v5.txt
 echo ""
-cat /root/sing-box/tuic-v5.txt | qrencode -t ANSIUTF8 
+cat /root/tuic-v5.txt | qrencode -t ANSIUTF8 
 echo ""
 ```
 
