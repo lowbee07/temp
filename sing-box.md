@@ -7,6 +7,7 @@ sudo apt-get install -y jq openssl qrencode
 last_version="1.12.16"
 archAffix=amd64
 wget https://github.com/SagerNet/sing-box/releases/download/v"$last_version"/sing-box_"$last_version"_linux_$archAffix.deb -O sing-box.deb
+
 sudo dpkg -i sing-box.deb
 # remove 
 # apt -y autoremove sing-box
@@ -44,14 +45,12 @@ tuic_pwd=$(openssl rand -hex 8)
 IP=$(curl -s ipv4.wtfismyip.com/text)
 country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
 
-mkdir /root/sing-box >/dev/null 2>&1
-
 # 生成 vless 分享链接
 vless_link="vless://$UUID@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#${country}-vless-Reality"
-echo ${vless_link} > /root/vless-vision-reality.txt
+echo ${vless_link} > vless-vision-reality.txt
 
 tuic_link="tuic://${UUID}:${tuic_pwd}@${IP}:${port2}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"
-echo $tuic_link > /root/tuic-v5.txt
+echo $tuic_link > tuic-v5.txt
 echo ""
 
 # 将默认的配置文件删除，并写入
@@ -132,13 +131,13 @@ EOF
 ```bash
 echo "Here is the link for v2rayN and v2rayNG :"
 echo ""
-cat /root/vless-vision-reality.txt
+cat vless-vision-reality.txt
 echo ""
-cat /root/vless-vision-reality.txt | qrencode -t ANSIUTF8 
+cat vless-vision-reality.txt | qrencode -t ANSIUTF8 
 echo ""
-cat /root/tuic-v5.txt
+cat tuic-v5.txt
 echo ""
-cat /root/tuic-v5.txt | qrencode -t ANSIUTF8 
+cat tuic-v5.txt | qrencode -t ANSIUTF8 
 echo ""
 ```
 
