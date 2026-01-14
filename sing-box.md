@@ -40,7 +40,7 @@ public_key=$(echo $keys | awk -F " " '{print $4}')
 # tuic v5
 port2=$(shuf -i 20000-60000 -n 1)
 tuic_pwd=$(openssl rand -hex 8)
-sni='www.bing.com'
+[[ -z $sni ]] && sni='www.bing.com'
 IP=$(curl -s ipv4.wtfismyip.com/text)
 country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
 
