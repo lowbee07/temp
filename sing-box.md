@@ -141,6 +141,7 @@ echo ${ss_link} > shadowsocks.txt
 cat << EOF
         {
             "type": "shadowsocks",
+            "tag": "ss-in",
             "listen": "::",
             "listen_port": $port3,
             "method": "chacha20-ietf-poly1305",
