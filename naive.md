@@ -1,4 +1,4 @@
-### caddy
+### [naiveproxy](https://github.com/klzgrad/naiveproxy/)
 
 ```bash
 # download
@@ -38,6 +38,14 @@ cat > /etc/caddy/Caddyfile << EOF
 }
 EOF
 
+echo ""
+echo "client config.json"
+cat << EOF
+{
+  "listen": "socks://127.0.0.1:1080",
+  "proxy": "https://$uuid:password@$domain"
+}
+EOF
 ```
 Test if it works:
 ```sh
