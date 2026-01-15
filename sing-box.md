@@ -46,7 +46,7 @@ tuic_pwd=$(openssl rand -hex 8)
 [[ -z $sni ]] && sni='www.bing.com'
 
 # 生成 vless 分享链接
-vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#${country}-vless-Reality"
+vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${country}-vless-Reality"
 echo ${vless_link} > vless-vision-reality.txt
 
 tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${port2}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"

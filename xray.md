@@ -94,7 +94,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color/Reset
 
-vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#$country-vless-vision-reality"
+vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#$country-vless-vision-reality"
 echo ${vless_link} > vless-vision-reality.txt
 echo ''
 echo -e "${YELLOW}${vless_link}${NC}"

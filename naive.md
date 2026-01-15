@@ -8,7 +8,7 @@ tar -xJf caddy.tar.xz
 mv caddy-forwardproxy-naive/caddy /usr/bin/
 chmod +x /usr/bin/caddy
 
-# 伪装网站
+# 网站
 mkdir -p /var/www/html
 wget https://github.com/HFIProgramming/mikutap/archive/refs/tags/2.0.0.tar.gz
 tar -xzf mikutap-2.0.0.tar.gz
@@ -16,6 +16,7 @@ tar -xzf mikutap-2.0.0.tar.gz
 # mv mikutap-2.0.0 /var/www/html
 
 uuid=$(cat /proc/sys/kernel/random/uuid)
+pass=$(openssl rand -hex 8)
 domain='你的域名'
 email='你的邮箱'
 
@@ -27,7 +28,7 @@ cat > /etc/caddy/Caddyfile << EOF
 :443, $domain {   
   tls $email
   forward_proxy {
-    basic_auth $uuid password
+    basic_auth $uuid $pass
     hide_ip
     hide_via
     probe_resistance
@@ -43,7 +44,7 @@ echo "client config.json"
 cat << EOF
 {
   "listen": "socks://127.0.0.1:1080",
-  "proxy": "https://$uuid:password@$domain"
+  "proxy": "https://$uuid:$pass@$domain"
 }
 EOF
 ```
@@ -56,16 +57,16 @@ Test if it works:
 
 #### Example Caddyfile
 ```
-:443, naive.buliang0.tk #你的域名
-tls example@example.com #你的邮箱
+:443, naive.example.tk  # 你的域名
+tls example@example.com # 你的邮箱
 route {
  forward_proxy {
-   basic_auth user pass #用户名和密码
+   basic_auth user pass # 用户名和密码
    hide_ip
    hide_via
    probe_resistance
   }
- #伪装网址 
+ # 反代网址 
  reverse_proxy  https://www.tesla.com  { 
    header_up  Host  {upstream_hostport}
    header_up  X-Forwarded-Host  {host}
