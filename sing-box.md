@@ -21,16 +21,15 @@ systemctl status sing-box
 
 IP=$(curl -s ipv4.wtfismyip.com/text)
 country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
+uuid=$(sing-box generate uuid)
+
 # vless-vision-reality
 port=$(shuf -i 20000-60000 -n 1)
-uuid=$(sing-box generate uuid)
-# www.sega.com www.lovelive-anime.jp
-dest_server="www.sega.com"
-
 short_id=$(openssl rand -hex 8)
 keys=$(sing-box generate reality-keypair)
 private_key=$(echo $keys | awk -F " " '{print $2}')
 public_key=$(echo $keys | awk -F " " '{print $4}')
+dest_server="www.sega.com" # www.sega.com www.lovelive-anime.jp
 
 # tuic v5
 port2=$(shuf -i 20000-60000 -n 1)
