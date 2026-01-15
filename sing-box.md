@@ -1,4 +1,4 @@
-### install sing-box
+### [sing-box](https://github.com/SagerNet/sing-box/)
 
 ```bash
 sudo apt-get update
@@ -25,9 +25,11 @@ chmod 777 /etc/sing-box/cert.crt
 
 ```bash
 
+IP=$(curl -s ipv4.wtfismyip.com/text)
+country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
 # vless-vision-reality
 port=$(shuf -i 20000-60000 -n 1)
-UUID=$(sing-box generate uuid)
+uuid=$(sing-box generate uuid)
 # www.sega.com www.lovelive-anime.jp
 dest_server="www.sega.com"
 
@@ -42,14 +44,12 @@ public_key=$(echo $keys | awk -F " " '{print $4}')
 port2=$(shuf -i 20000-60000 -n 1)
 tuic_pwd=$(openssl rand -hex 8)
 [[ -z $sni ]] && sni='www.bing.com'
-IP=$(curl -s ipv4.wtfismyip.com/text)
-country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
 
 # 生成 vless 分享链接
-vless_link="vless://$UUID@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#${country}-vless-Reality"
+vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#${country}-vless-Reality"
 echo ${vless_link} > vless-vision-reality.txt
 
-tuic_link="tuic://${UUID}:${tuic_pwd}@${IP}:${port2}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"
+tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${port2}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"
 echo $tuic_link > tuic-v5.txt
 echo ""
 
@@ -71,7 +71,7 @@ cat << EOF > /etc/sing-box/config.json
             "sniff_override_destination": true,
             "users": [
                 {
-                    "uuid": "$UUID",
+                    "uuid": "$uuid",
                     "flow": "xtls-rprx-vision"
                 }
             ],
@@ -98,7 +98,7 @@ cat << EOF > /etc/sing-box/config.json
             "listen_port": $port2,
             "users": [
                 {
-                    "uuid": "$UUID",
+                    "uuid": "$uuid",
                     "password": "$tuic_pwd"
                 }
             ],
@@ -126,6 +126,27 @@ cat << EOF > /etc/sing-box/config.json
 }
 EOF
 
+```
+
+Shadowsocks
+
+```SH
+port3=$(shuf -i 20000-60000 -n 1) 
+ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port3}#${country}-ss"
+echo ''
+echo ${ss_link}
+echo ''
+echo ${ss_link} > shadowsocks.txt
+
+cat << EOF
+        {
+            "type": "shadowsocks",
+            "listen": "::",
+            "listen_port": $port3,
+            "method": "chacha20-ietf-poly1305",
+            "password": "$uuid"
+        }
+EOF
 ```
 
 ```bash
