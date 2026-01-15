@@ -15,12 +15,6 @@ systemctl status sing-box
 ```
 
 ```bash
-# 自签证书 www.bing.com www.tesla.com
-sni='www.bing.com'
-openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
-openssl req -new -x509 -days 36500 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
-chmod 777 /etc/sing-box/private.key
-chmod 777 /etc/sing-box/cert.crt
 ```
 
 ```bash
@@ -33,9 +27,7 @@ uuid=$(sing-box generate uuid)
 # www.sega.com www.lovelive-anime.jp
 dest_server="www.sega.com"
 
-# Reality short-id
 short_id=$(openssl rand -hex 8)
-# Reality 公私钥
 keys=$(sing-box generate reality-keypair)
 private_key=$(echo $keys | awk -F " " '{print $2}')
 public_key=$(echo $keys | awk -F " " '{print $4}')
@@ -43,7 +35,12 @@ public_key=$(echo $keys | awk -F " " '{print $4}')
 # tuic v5
 port2=$(shuf -i 20000-60000 -n 1)
 tuic_pwd=$(openssl rand -hex 8)
-[[ -z $sni ]] && sni='www.bing.com'
+# 自签证书 www.bing.com www.tesla.com
+sni='www.bing.com'
+openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
+openssl req -new -x509 -days 36500 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
+chmod 777 /etc/sing-box/private.key
+chmod 777 /etc/sing-box/cert.crt
 
 # 生成 vless 分享链接
 vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${country}-vless-Reality"
