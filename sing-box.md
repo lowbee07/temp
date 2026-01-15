@@ -15,9 +15,6 @@ systemctl status sing-box
 ```
 
 ```bash
-```
-
-```bash
 
 IP=$(curl -s ipv4.wtfismyip.com/text)
 country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
