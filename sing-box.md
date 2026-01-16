@@ -4,6 +4,7 @@
 sudo apt-get update
 sudo apt-get install -y jq openssl qrencode
 
+# last_version=$(curl -s https://data.jsdelivr.com/v1/package/gh/SagerNet/sing-box | sed -n 4p | tr -d ',"' | awk '{print $1}')
 last_version="1.12.16"
 archAffix=amd64
 wget https://github.com/SagerNet/sing-box/releases/download/v"$last_version"/sing-box_"$last_version"_linux_$archAffix.deb -O sing-box.deb
