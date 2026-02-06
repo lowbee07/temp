@@ -61,8 +61,6 @@ cat << EOF > /etc/sing-box/config.json
             "tag": "vless-in",
             "listen": "::",
             "listen_port": $port,
-            "sniff": true,
-            "sniff_override_destination": true,
             "users": [
                 {
                     "uuid": "$uuid",
