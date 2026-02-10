@@ -27,6 +27,7 @@ short_id=$(openssl rand -hex 8)
 keys=$(sing-box generate reality-keypair)
 private_key=$(echo $keys | awk -F " " '{print $2}')
 public_key=$(echo $keys | awk -F " " '{print $4}')
+
 dest_server="www.sega.com" # www.sega.com www.lovelive-anime.jp
 
 # tuic v5
