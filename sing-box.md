@@ -162,9 +162,9 @@ systemctl restart sing-box
 
 systemctl status sing-box
 
-systemctl start sing-box
-systemctl stop sing-box
-systemctl disable sing-box
+# systemctl start sing-box
+# systemctl stop sing-box
+# systemctl disable sing-box
 
 # 实时日志
 journalctl -u sing-box -o cat -f
