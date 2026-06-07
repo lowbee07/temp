@@ -36,7 +36,7 @@ tuic_pwd=$(openssl rand -hex 8)
 # 自签证书 www.bing.com www.tesla.com
 sni='www.bing.com'
 openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
-openssl req -new -x509 -days 36500 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
+openssl req -new -x509 -days 200 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
 chmod 777 /etc/sing-box/private.key
 chmod 777 /etc/sing-box/cert.crt
 
