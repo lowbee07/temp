@@ -30,9 +30,10 @@ public_key=$(echo $keys | awk -F " " '{print $4}')
 
 dest_server="www.sega.com" # www.sega.com www.lovelive-anime.jp
 
-# tuic v5
-port2=$(shuf -i 20000-60000 -n 1)
-tuic_pwd=$(openssl rand -hex 8)
+# 生成 vless 分享链接
+vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${country}-vless-Reality"
+echo ${vless_link} > vless-vision-reality.txt
+
 # 自签证书 www.bing.com www.tesla.com
 sni='www.bing.com'
 openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
@@ -40,13 +41,17 @@ openssl req -new -x509 -days 200 -key /etc/sing-box/private.key -out /etc/sing-b
 chmod 777 /etc/sing-box/private.key
 chmod 777 /etc/sing-box/cert.crt
 
-# 生成 vless 分享链接
-vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${country}-vless-Reality"
-echo ${vless_link} > vless-vision-reality.txt
+# tuic v5
+port_tuic=$(shuf -i 20000-60000 -n 1)
+tuic_pwd=$(openssl rand -hex 8)
 
-tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${port2}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"
+tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${port_tuic}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"
 echo $tuic_link > tuic-v5.txt
-echo ""
+
+# anytls
+port_anytls=$(shuf -i 20000-60000 -n 1)
+anytls_link="anytls://$uuid@${IP}:$port_anytls?&sni=$sni&insecure=1#${country}-anytls"
+echo $anytls_link > anytls.txt
 
 # 将默认的配置文件删除，并写入
 rm -f /etc/sing-box/config.json
@@ -88,7 +93,7 @@ cat << EOF > /etc/sing-box/config.json
             "type": "tuic",
             "tag": "tuic-in",
             "listen": "::",
-            "listen_port": $port2,
+            "listen_port": $port_tuic,
             "users": [
                 {
                     "uuid": "$uuid",
@@ -101,6 +106,23 @@ cat << EOF > /etc/sing-box/config.json
                 "alpn": [
                     "h3"
                 ],
+                "certificate_path": "/etc/sing-box/cert.crt",
+                "key_path": "/etc/sing-box/private.key"
+            }
+        },
+        {
+            "type": "anytls",
+            "tag": "anytls-in",
+            "listen": "::",
+            "listen_port": ${port_anytls},
+            "users": [
+                {
+                  "password":"${uuid}"
+                }
+            ],
+            "padding_scheme": [],
+            "tls":{
+                "enabled": true,
                 "certificate_path": "/etc/sing-box/cert.crt",
                 "key_path": "/etc/sing-box/private.key"
             }
@@ -124,8 +146,8 @@ EOF
 Shadowsocks
 
 ```SH
-port3=$(shuf -i 20000-60000 -n 1) 
-ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port3}#${country}-ss"
+port_ss=$(shuf -i 20000-60000 -n 1) 
+ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port_ss}#${country}-ss"
 echo ''
 echo ${ss_link}
 echo ''
@@ -136,7 +158,7 @@ cat << EOF
             "type": "shadowsocks",
             "tag": "ss-in",
             "listen": "::",
-            "listen_port": $port3,
+            "listen_port": $port_ss,
             "method": "chacha20-ietf-poly1305",
             "password": "$uuid"
         }
@@ -144,7 +166,7 @@ EOF
 ```
 
 ```bash
-echo "Here is the link for v2rayN and v2rayNG :"
+# echo "Here is the link for v2rayN and v2rayNG :"
 echo ""
 cat vless-vision-reality.txt
 echo ""
@@ -153,6 +175,10 @@ echo ""
 cat tuic-v5.txt
 echo ""
 cat tuic-v5.txt | qrencode -t ANSIUTF8 
+echo ""
+cat anytls.txt
+echo ""
+cat anytls.txt | qrencode -t ANSIUTF8 
 echo ""
 ```
 

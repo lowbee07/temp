@@ -120,8 +120,8 @@ systemctl status xray
 Shadowsocks
 
 ```SH
-port2=$(shuf -i 20000-60000 -n 1) 
-ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port2}#${country}-ss"
+port_ss=$(shuf -i 20000-60000 -n 1) 
+ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port_ss}#${country}-ss"
 echo ''
 echo ${ss_link}
 echo ''
@@ -130,7 +130,7 @@ echo ${ss_link} > shadowsocks.txt
 cat << EOF
         {
             "listen": "0.0.0.0",
-            "port": $port2,
+            "port": $port_ss,
             "protocol": "shadowsocks",
             "settings": {
                 "method": "chacha20-ietf-poly1305",
