@@ -25,8 +25,6 @@ hostname=US
 sni='www.bing.com'
 openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
 openssl req -new -x509 -days 200 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
-chmod 777 /etc/sing-box/private.key
-chmod 777 /etc/sing-box/cert.crt
 
 IP=$(curl -s ipv4.wtfismyip.com/text)
 # hostname=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
