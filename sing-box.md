@@ -17,8 +17,20 @@ systemctl status sing-box
 
 ```bash
 
+# reality target site: www.lovelive-anime.jp www.sega.com
+dest_server="www.sega.com" 
+hostname=US
+
+# 自签证书 www.bing.com www.tesla.com
+sni='www.bing.com'
+openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
+openssl req -new -x509 -days 200 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
+chmod 777 /etc/sing-box/private.key
+chmod 777 /etc/sing-box/cert.crt
+
 IP=$(curl -s ipv4.wtfismyip.com/text)
-country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
+# hostname=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
+
 uuid=$(sing-box generate uuid)
 
 # vless-vision-reality
@@ -28,29 +40,20 @@ keys=$(sing-box generate reality-keypair)
 private_key=$(echo $keys | awk -F " " '{print $2}')
 public_key=$(echo $keys | awk -F " " '{print $4}')
 
-dest_server="www.sega.com" # www.sega.com www.lovelive-anime.jp
-
 # 生成 vless 分享链接
-vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${country}-vless-Reality"
+vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${hostname}-vless-Reality"
 echo ${vless_link} > vless-vision-reality.txt
-
-# 自签证书 www.bing.com www.tesla.com
-sni='www.bing.com'
-openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
-openssl req -new -x509 -days 200 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
-chmod 777 /etc/sing-box/private.key
-chmod 777 /etc/sing-box/cert.crt
 
 # tuic v5
 port_tuic=$(shuf -i 20000-60000 -n 1)
 tuic_pwd=$(openssl rand -hex 8)
 
-tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${port_tuic}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${country}-tuic-v5"
+tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${port_tuic}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${hostname}-tuic-v5"
 echo $tuic_link > tuic-v5.txt
 
 # anytls
 port_anytls=$(shuf -i 20000-60000 -n 1)
-anytls_link="anytls://$uuid@${IP}:$port_anytls?&sni=$sni&insecure=1#${country}-anytls"
+anytls_link="anytls://$uuid@${IP}:$port_anytls?&sni=$sni&insecure=1#${hostname}-anytls"
 echo $anytls_link > anytls.txt
 
 # 将默认的配置文件删除，并写入
@@ -147,7 +150,7 @@ Shadowsocks
 
 ```SH
 port_ss=$(shuf -i 20000-60000 -n 1) 
-ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port_ss}#${country}-ss"
+ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port_ss}#${hostname}-ss"
 echo ''
 echo ${ss_link}
 echo ''

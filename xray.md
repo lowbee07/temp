@@ -14,14 +14,18 @@ bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release
 
 # reality target site: www.lovelive-anime.jp www.sega.com
 dest_server=www.lovelive-anime.jp
+hostname=US
+
 port=443
+IP=1.2.3.4
 # port=$(shuf -i 20000-60000 -n 1) 
 uuid=892dabdf-83e6-4783-862c-228f4d3a3dd9
 private_key=EATh8IAcm_8BlmouL7cBc8S7S0SEKwDZ-iczwyLdEF0
 public_key=UhDDXKj_mmkQB3t_h67dCdUcoPntqWAkYad9ILVcrUw
 short_id=49701b29dd1a6926
-IP=1.2.3.4
-country=US
+
+IP=$(curl -s ipv4.wtfismyip.com/text)
+# hostname=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
 
 uuid=$(xray uuid)
 keys=$(xray x25519)
@@ -29,8 +33,6 @@ private_key=$(echo "$keys" | awk '/Private key:/ {print $3}')
 public_key=$(echo "$keys" | awk '/Public key:/ {print $3}')
 short_id=$(openssl rand -hex 8)
 # ws_path='/'$(echo $uuid | cut -d '-' -f 1)
-IP=$(curl -s ipv4.wtfismyip.com/text)
-country=$(curl -s https://api.country.is  | awk -F '"' '{print $8}')
 
 # VLESS-Vision-REALITY
 cat > /usr/local/etc/xray/config.json << EOF
@@ -94,7 +96,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color/Reset
 
-vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#$country-vless-vision-reality"
+vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#$hostname-vless-vision-reality"
 echo ${vless_link} > vless-vision-reality.txt
 echo ''
 echo -e "${YELLOW}${vless_link}${NC}"
@@ -121,7 +123,7 @@ Shadowsocks
 
 ```SH
 port_ss=$(shuf -i 20000-60000 -n 1) 
-ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port_ss}#${country}-ss"
+ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port_ss}#${hostname}-ss"
 echo ''
 echo ${ss_link}
 echo ''
