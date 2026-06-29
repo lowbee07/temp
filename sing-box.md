@@ -39,19 +39,19 @@ private_key=$(echo $keys | awk -F " " '{print $2}')
 public_key=$(echo $keys | awk -F " " '{print $4}')
 
 # 生成 vless 分享链接
-vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${hostname}-vless-Reality"
-echo ${vless_link} > vless-vision-reality.txt
+vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${hostname}-VLESS"
+echo ${vless_link} > vless.txt
 
 # tuic v5
 port_tuic=$(shuf -i 20000-60000 -n 1)
 tuic_pwd=$(openssl rand -hex 8)
 
-tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${port_tuic}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${hostname}-tuic-v5"
-echo $tuic_link > tuic-v5.txt
+tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${port_tuic}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${hostname}-TUIC"
+echo $tuic_link > tuic.txt
 
 # anytls
 port_anytls=$(shuf -i 20000-60000 -n 1)
-anytls_link="anytls://$uuid@${IP}:$port_anytls?&sni=$sni&insecure=1&fp=chrome#${hostname}-anytls"
+anytls_link="anytls://$uuid@${IP}:$port_anytls?&sni=$sni&insecure=1&fp=chrome#${hostname}-AnyTLS"
 echo $anytls_link > anytls.txt
 
 # 将默认的配置文件删除，并写入
