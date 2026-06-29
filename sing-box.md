@@ -44,15 +44,15 @@ vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&securi
 echo ${vless_link} > vless.txt
 
 # tuic v5
-port_tuic=$(shuf -i 20000-60000 -n 1)
+tuic_port=$(shuf -i 20000-60000 -n 1)
 tuic_pwd=$(openssl rand -hex 8)
 
-tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${port_tuic}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${hostname}-TUIC"
+tuic_link="tuic://${uuid}:${tuic_pwd}@${IP}:${tuic_port}?sni=$sni&congestion_control=bbr&udp_relay_mode=native&alpn=h3&allow_insecure=1#${hostname}-TUIC"
 echo $tuic_link > tuic.txt
 
 # anytls
-port_anytls=$(shuf -i 20000-60000 -n 1)
-anytls_link="anytls://$uuid@${IP}:$port_anytls?&sni=$sni&insecure=1&fp=chrome#${hostname}-AnyTLS"
+anytls_port=$(shuf -i 20000-60000 -n 1)
+anytls_link="anytls://$uuid@${IP}:$anytls_port?&sni=$sni&insecure=1&fp=chrome#${hostname}-AnyTLS"
 echo $anytls_link > anytls.txt
 
 # 将默认的配置文件删除，并写入
@@ -95,7 +95,7 @@ cat << EOF > /etc/sing-box/config.json
             "type": "tuic",
             "tag": "tuic-in",
             "listen": "::",
-            "listen_port": $port_tuic,
+            "listen_port": $tuic_port,
             "users": [
                 {
                     "uuid": "$uuid",
@@ -116,7 +116,7 @@ cat << EOF > /etc/sing-box/config.json
             "type": "anytls",
             "tag": "anytls-in",
             "listen": "::",
-            "listen_port": ${port_anytls},
+            "listen_port": ${anytls_port},
             "users": [
                 {
                   "password":"${uuid}"
@@ -148,8 +148,8 @@ EOF
 Shadowsocks
 
 ```SH
-port_ss=$(shuf -i 20000-60000 -n 1) 
-ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${port_ss}#${hostname}-ss"
+ss_port=$(shuf -i 20000-60000 -n 1) 
+ss_link="ss://$(echo -n chacha20-ietf-poly1305:${uuid} | base64 -w 0)@${IP}:${ss_port}#${hostname}-ss"
 echo ''
 echo ${ss_link}
 echo ''
@@ -160,7 +160,7 @@ cat << EOF
             "type": "shadowsocks",
             "tag": "ss-in",
             "listen": "::",
-            "listen_port": $port_ss,
+            "listen_port": $ss_port,
             "method": "chacha20-ietf-poly1305",
             "password": "$uuid"
         }
