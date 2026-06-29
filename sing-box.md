@@ -32,7 +32,8 @@ IP=$(curl -s ipv4.wtfismyip.com/text)
 uuid=$(sing-box generate uuid)
 
 # vless-vision-reality
-port=$(shuf -i 20000-60000 -n 1)
+# port=$(shuf -i 20000-60000 -n 1)
+port=443
 short_id=$(openssl rand -hex 8)
 keys=$(sing-box generate reality-keypair)
 private_key=$(echo $keys | awk -F " " '{print $2}')
