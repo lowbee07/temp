@@ -51,7 +51,7 @@ echo $tuic_link > tuic-v5.txt
 
 # anytls
 port_anytls=$(shuf -i 20000-60000 -n 1)
-anytls_link="anytls://$uuid@${IP}:$port_anytls?&sni=$sni&insecure=1#${hostname}-anytls"
+anytls_link="anytls://$uuid@${IP}:$port_anytls?&sni=$sni&insecure=1&fp=chrome#${hostname}-anytls"
 echo $anytls_link > anytls.txt
 
 # 将默认的配置文件删除，并写入
