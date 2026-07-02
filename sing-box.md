@@ -173,13 +173,13 @@ EOF
 ```bash
 # echo "Here is the link for v2rayN and v2rayNG :"
 echo ""
-cat vless-vision-reality.txt
+cat vless-reality.txt
 echo ""
-cat vless-vision-reality.txt | qrencode -t ANSIUTF8 
+cat vless-reality.txt | qrencode -t ANSIUTF8 
 echo ""
-cat tuic-v5.txt
+cat tuic.txt
 echo ""
-cat tuic-v5.txt | qrencode -t ANSIUTF8 
+cat tuic.txt | qrencode -t ANSIUTF8 
 echo ""
 cat anytls.txt
 echo ""
