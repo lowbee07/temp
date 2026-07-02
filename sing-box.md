@@ -21,7 +21,7 @@ systemctl status sing-box
 dest_server="www.sega.com" 
 hostname=US
 
-# 自签证书 www.bing.com www.tesla.com
+# 自签证书 www.bing.com d1.awsstatic.com
 sni='www.bing.com'
 openssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key
 openssl req -new -x509 -days 200 -key /etc/sing-box/private.key -out /etc/sing-box/cert.crt -subj "/CN=${sni}"
@@ -39,9 +39,12 @@ keys=$(sing-box generate reality-keypair)
 private_key=$(echo $keys | awk -F " " '{print $2}')
 public_key=$(echo $keys | awk -F " " '{print $4}')
 
-# 生成 vless 分享链接
-vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${hostname}-VLESS"
-echo ${vless_link} > vless.txt
+# 生成 vless + reality 分享链接
+vless_link="vless://$uuid@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp#${hostname}-VLESS-Reality"
+echo ${vless_link} > vless-reality.txt
+
+# vless + tls
+# vless://$uuid@$IP:$port?type=tcp&encryption=none&flow=xtls-rprx-vision&security=tls&sni=${sni}&allowInsecure=1&fp=chrome#${hostname}-VLESS
 
 # tuic v5
 tuic_port=$(shuf -i 20000-60000 -n 1)
@@ -197,6 +200,21 @@ systemctl status sing-box
 # 实时日志
 journalctl -u sing-box -o cat -f
 ```
+
+replace reality target site
+
+```bash
+
+# reality target site: www.lovelive-anime.jp www.sega.com
+old_server="www.sega.com" 
+dest_server="www.lovelive-anime.jp"
+
+sed -i "s_${old_server}_${dest_server}_" vless.txt
+sed -i "s_${old_server}_${dest_server}_" /etc/sing-box/config.json
+
+systemctl restart sing-box
+``` 
+
 ### reference
 - [chika0801/sing-box-examples](https://github.com/chika0801/sing-box-examples/)
 - [deathline94/sing-REALITY-Box](https://github.com/deathline94/sing-REALITY-Box)
